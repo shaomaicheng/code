@@ -10,7 +10,7 @@ mInstrumentation.execStartActivity(
                     intent, requestCode, options);
 ```
 
-###### execStartActivity流程
+### execStartActivity流程
 * 遍历ActivityMonitor对象的数组，如果有匹配的Intent信息，判断ActivityMonitor对象是否运行活动启动，如果可以，判断requestcode，如果requestcode大于0，说明需要返回数据。
 * Intent的migrateExtraStreamToClipData()，判断是否根据Intent跳转系统的页面
 包括
@@ -23,7 +23,7 @@ mInstrumentation.execStartActivity(
 * intent.prepareToLeaveProcess(); 准备离开应用程序的进程，进入AMS进程，也意味着要进行进程间的通信了，这一步恰恰解释了为什么Intent传递数据需要序列号而不是直接传递对象，因为直接传递对象的办法在IPC的过程中就废了
 * 调用AMS的startActivity方法启动Activity
 
-###### 进程间通信的过程
+### 进程间通信的过程
 Instrumentation中调用
 ```java
 ActivityManagerNative.getDefault()
@@ -45,5 +45,8 @@ asInterface返回ActivityManagerProxy对象,这个代理对象的startActivity�
 mRemote.transact(START_ACTIVITY_TRANSACTION, data, reply, 0);
 ```
 调用了server进程(ActivityManagerService)的startActivity方法
+
+### ActivityManagerService启动Activity
+* resolveActivity方法，收集Activity的信息，返回一个表示了在AndroidManifest.xml中指定了属性的ActivityInfo对象
 
 
