@@ -47,6 +47,34 @@ mRemote.transact(START_ACTIVITY_TRANSACTION, data, reply, 0);
 调用了server进程(ActivityManagerService)的startActivity方法
 
 ### ActivityManagerService启动Activity
-* resolveActivity方法，收集Activity的信息，返回一个表示了在AndroidManifest.xml中指定了属性的ActivityInfo对象
+调用ActivityStackSupervisor的startActivityMayWait方法
 
+* resolveActivity方法，收集Activity的信息，返回一个表示了在AndroidManifest.xml中指定了属性的ActivityInfo对象
+* 获取ActiviyContainer对象
+* 获取pid和linux的uid
+* 检查是否有另一个重的进程在运行中
+  1. 如果是一个heavy-weight process,就从LRU缓存中取出（最近最常使用）进程对象
+    获取存放Intent发送信息的IntentSender对象，根据这个对象更新ActiivityInfo对象并且启动选择Activity的页面，目的是处理2个一样的Activity可选的启动场景.
+  2. 此时调用了startActivityLocked方法来获取返回值，如果需要改变配置，则调用ActivityManagerService的updateConfigurationLocked方法进行配置的更新。
+
+
+##### 轻重进程的概念
+轻量级进程，可以与父进程共享地址空间和系统资源
+与普通进程的区别：轻量级进程只有一个最小的执行上下文和调度程序所需要的统计信息
+```
+* 与处理器竞争：因与特定内核线程关联，所以可以在系统范围内竞争处理器资源
+* 使用资源：与父进程共享地址空间
+* 调度：与普通进程一样
+轻量级线程(LWP)是一种由内核支持的用户线程。它是基于内核线程的高级抽象，因此只有先支持内核线程，才能有LWP。每一个进程有一个或多个LWPs，每个LWP由一个内核线程支持。这种模型实际上就是恐龙书上所提到的一对一线程模型。在这种实现的操作系统中，LWP就是用户线程。
+* 与用户线程的区别：LWP虽然本质上属于用户线程，但LWP线程库是建立在内核之上的，LWP的许多操作都要进行系统调用，因此效率不高。而这里的用户线程指的是完全建立在用户空间的线程库，用户线程的建立，同步，销毁，调度完全在用户空间完成，不需要内核的帮助。因此这种线程的操作是极其快速的且低消耗的。
+```
+
+#### 关于ActivityContainer
+一个ActivityContainer对象包括
+```
+* Activity栈id
+* Activity栈 历史Activity栈中的条目，每一个条目都代表了一个Activity
+* ActivityRecord对象
+* ActivityDisplay 与当前Activity栈关联的显示对象
+```
 
