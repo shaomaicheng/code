@@ -52,8 +52,8 @@ mRemote.transact(START_ACTIVITY_TRANSACTION, data, reply, 0);
 * resolveActivity方法，收集Activity的信息，返回一个表示了在AndroidManifest.xml中指定了属性的ActivityInfo对象
 * 获取ActiviyContainer对象
 * 获取pid和linux的uid
-* 检查是否有另一个重的进程在运行中
-  1. 如果是一个heavy-weight process,就从LRU缓存中取出（最近最常使用）进程对象
+* 检查是否有另一个进程在运行中
+  1. 如果是一个重名的heavy-weight process,就从LRU缓存中取出（最近最常使用）进程对象
     获取存放Intent发送信息的IntentSender对象，根据这个对象更新ActiivityInfo对象并且启动选择Activity的页面，目的是处理2个一样的Activity可选的启动场景.
   2. 此时调用了startActivityLocked方法来获取返回值，如果需要改变配置，则调用ActivityManagerService的updateConfigurationLocked方法进行配置的更新。
 
@@ -76,5 +76,28 @@ mRemote.transact(START_ACTIVITY_TRANSACTION, data, reply, 0);
 * Activity栈 历史Activity栈中的条目，每一个条目都代表了一个Activity
 * ActivityRecord对象
 * ActivityDisplay 与当前Activity栈关联的显示对象
+```
+
+
+### 进入ActivityStackSupervisor的startActivityLocked方法
+```
+1. getRecordForAppLocked获取进程ProcressRecord对象，如果为空则会抛出ActivityManager.START_PERMISSION_DENIED的错误
+2. 声明2个ActivityRecord对象，sourceRecord和resultRecord
+3. 设置Activity的启动模式
+4. 检查是否有启动Activity的权限
+5. 处理Activity启动过程中的中断并得到AtivityRecord对象
+6. 查看当前Activity栈是否有待恢复（Resumed）的Activity，没有切换权限的时候会把请求保存起来，返回ActivityManager.START_SWITCHES_CANCELED（这个返回值在外层方法不做处理）
+7. 调用startActivityUncheckedLocked方法
+```
+
+### 进入ActivityStackSupervisior的startActivityUncheckedLocked方法
+```
+比较复杂的一个方法
+大致目的为
+1. 判断是否需要创建一个Task
+2. 如果Activity可以复用就进行复用，寻找匹配改Activity的Task，并且将Task移动到前台运行
+3. Activity不能进行复用的时候，根据启动模式的规则进行匹配
+4. 决定是否创建新的Task，并且将Activity和Task关联。
+5. 最终调用ActivityStack的resumeTopActivityLocked方法，将Activity展示到前台
 ```
 
